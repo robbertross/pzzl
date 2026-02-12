@@ -14,6 +14,7 @@
   <h1>A to Aa</h1>
   <button id="start">Start</button>
   <button id="stop" disabled>Stop</button>
+  <pre id="out">Press “Start”.</pre>
 
   <script>
     // Target point (converted from DMS):
@@ -66,11 +67,7 @@
           const d = distanceMeters(me, target);
 
           out.textContent =
-            `Target:   ${target.lat.toFixed(6)}, ${target.lon.toFixed(6)}\n` +
-            `You:      ${me.lat.toFixed(6)}, ${me.lon.toFixed(6)}\n` +
-            `Distance: ${fmtDistance(d)}\n` +
-            `Accuracy: ±${Math.round(pos.coords.accuracy)} m\n` +
-            `Updated:  ${new Date(pos.timestamp).toLocaleTimeString()}`;
+            `A to Aa: ${fmtDistance(d)}\n`;
         },
         (err) => {
           out.textContent = `Error: ${err.message}`;
