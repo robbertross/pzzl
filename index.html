@@ -67,8 +67,8 @@
     function renderOutput() {
       const remaining = countdownTargetMs - Date.now();
       const countdownLine = (remaining <= 0)
-        ? "Countdown: Let's GO! 🎉"
-        : `Countdown: ${fmtCountdown(remaining)}`;
+        ? "Let's GO! 🎉"
+        : `${fmtCountdown(remaining)}`;
 
       const lines = [];
       if (lastDistanceText) lines.push(lastDistanceText);
@@ -106,7 +106,7 @@
         (pos) => {
           const me = { lat: pos.coords.latitude, lon: pos.coords.longitude };
           const d = distanceMeters(me, target);
-          lastDistanceText = `A to Aa: ${fmtDistance(d)}`;
+          lastDistanceText = `${fmtDistance(d)}`;
           renderOutput();
         },
         (err) => {
