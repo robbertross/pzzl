@@ -11,24 +11,27 @@
   </style>
 </head>
 <body>
-  <h1>Aa to B</h1>
+  <h1>A to B</h1>
   <button id="start">Start</button>
   <button id="stop" disabled>Stop</button>
   <pre id="out">Press “Start”.</pre>
 
   <script>
-    // Target point (converted from DMS):
-    // 52°54’31.5”N, 6°36’40.6”E
     const target = { lat: 52.908750, lon: 6.611278 };
 
+    // March 12, 2026 12:00 Europe/Amsterdam = 11:00 UTC (CET is UTC+1 on that date)
+    const countdownTargetMs = Date.UTC(2026, 2, 12, 11, 0, 0);
+
     let watchId = null;
+    let countdownTimerId = null;
+    let lastDistanceText = "";
+
     const out = document.getElementById("out");
     const startBtn = document.getElementById("start");
     const stopBtn = document.getElementById("stop");
 
     function toRad(deg) { return deg * Math.PI / 180; }
 
-    // Haversine distance in meters
     function distanceMeters(a, b) {
       const R = 6371000;
       const dLat = toRad(b.lat - a.lat);
@@ -48,6 +51,42 @@
       return `${(m / 1000).toFixed(0)} km`;
     }
 
+    function fmtCountdown(msRemaining) {
+      if (msRemaining <= 0) return "0 days, 00:00:00";
+
+      const totalSeconds = Math.floor(msRemaining / 1000);
+      const days = Math.floor(totalSeconds / 86400);
+      const hours = Math.floor((totalSeconds % 86400) / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      const pad2 = (n) => String(n).padStart(2, "0");
+      return `${days} days, ${pad2(hours)}:${pad2(minutes)}:${pad2(seconds)}`;
+    }
+
+    function renderOutput() {
+      const remaining = countdownTargetMs - Date.now();
+      const countdownLine = (remaining <= 0)
+        ? "Countdown: Let's GO! 🎉"
+        : `Countdown: ${fmtCountdown(remaining)}`;
+
+      const lines = [];
+      if (lastDistanceText) lines.push(lastDistanceText);
+      lines.push(countdownLine);
+      out.textContent = lines.join("\n");
+    }
+
+    function startCountdown() {
+      renderOutput();
+      if (countdownTimerId != null) clearInterval(countdownTimerId);
+      countdownTimerId = setInterval(renderOutput, 1000);
+    }
+
+    function stopCountdown() {
+      if (countdownTimerId != null) clearInterval(countdownTimerId);
+      countdownTimerId = null;
+    }
+
     function setTrackingUI(isTracking) {
       startBtn.disabled = isTracking;
       stopBtn.disabled = !isTracking;
@@ -60,33 +99,31 @@
       }
 
       setTrackingUI(true);
+      lastDistanceText = "";
+      startCountdown();
 
       watchId = navigator.geolocation.watchPosition(
         (pos) => {
           const me = { lat: pos.coords.latitude, lon: pos.coords.longitude };
           const d = distanceMeters(me, target);
-
-          out.textContent =
-            `A to Aa: ${fmtDistance(d)}\n`;
+          lastDistanceText = `A to Aa: ${fmtDistance(d)}`;
+          renderOutput();
         },
         (err) => {
           out.textContent = `Error: ${err.message}`;
-          // Stop if permission denied or other fatal error
           if (watchId != null) navigator.geolocation.clearWatch(watchId);
           watchId = null;
+          stopCountdown();
           setTrackingUI(false);
         },
-        {
-          enableHighAccuracy: true,
-          maximumAge: 1000,  // allow recent cached fix (ms)
-          timeout: 15000
-        }
+        { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 }
       );
     });
 
     stopBtn.addEventListener("click", () => {
       if (watchId != null) navigator.geolocation.clearWatch(watchId);
       watchId = null;
+      stopCountdown();
       setTrackingUI(false);
       out.textContent = "Stopped.";
     });
