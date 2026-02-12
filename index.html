@@ -1,0 +1,99 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Live distance tracker</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; }
+    button { padding: 10px 12px; margin-right: 8px; }
+    pre { background: #f6f6f6; padding: 12px; border-radius: 10px; overflow: auto; }
+  </style>
+</head>
+<body>
+  <h1>Live distance tracker</h1>
+  <button id="start">Start tracking</button>
+  <button id="stop" disabled>Stop</button>
+  <pre id="out">Press “Start tracking”.</pre>
+
+  <script>
+    // Target point (converted from DMS):
+    // 52°54’31.5”N, 6°36’40.6”E
+    const target = { lat: 52.908750, lon: 6.611278 };
+
+    let watchId = null;
+    const out = document.getElementById("out");
+    const startBtn = document.getElementById("start");
+    const stopBtn = document.getElementById("stop");
+
+    function toRad(deg) { return deg * Math.PI / 180; }
+
+    // Haversine distance in meters
+    function distanceMeters(a, b) {
+      const R = 6371000;
+      const dLat = toRad(b.lat - a.lat);
+      const dLon = toRad(b.lon - a.lon);
+      const lat1 = toRad(a.lat);
+      const lat2 = toRad(b.lat);
+
+      const h =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+
+      return 2 * R * Math.asin(Math.sqrt(h));
+    }
+
+    function fmtDistance(m) {
+      if (m < 1000) return `${Math.round(m)} m`;
+      return `${(m / 1000).toFixed(3)} km`;
+    }
+
+    function setTrackingUI(isTracking) {
+      startBtn.disabled = isTracking;
+      stopBtn.disabled = !isTracking;
+    }
+
+    startBtn.addEventListener("click", () => {
+      if (!navigator.geolocation) {
+        out.textContent = "Geolocation is not supported in this browser.";
+        return;
+      }
+
+      setTrackingUI(true);
+
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          const me = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+          const d = distanceMeters(me, target);
+
+          out.textContent =
+            `Target:   ${target.lat.toFixed(6)}, ${target.lon.toFixed(6)}\n` +
+            `You:      ${me.lat.toFixed(6)}, ${me.lon.toFixed(6)}\n` +
+            `Distance: ${fmtDistance(d)}\n` +
+            `Accuracy: ±${Math.round(pos.coords.accuracy)} m\n` +
+            `Updated:  ${new Date(pos.timestamp).toLocaleTimeString()}`;
+        },
+        (err) => {
+          out.textContent = `Error: ${err.message}`;
+          // Stop if permission denied or other fatal error
+          if (watchId != null) navigator.geolocation.clearWatch(watchId);
+          watchId = null;
+          setTrackingUI(false);
+        },
+        {
+          enableHighAccuracy: true,
+          maximumAge: 1000,  // allow recent cached fix (ms)
+          timeout: 15000
+        }
+      );
+    });
+
+    stopBtn.addEventListener("click", () => {
+      if (watchId != null) navigator.geolocation.clearWatch(watchId);
+      watchId = null;
+      setTrackingUI(false);
+      out.textContent = "Tracking stopped.";
+    });
+  </script>
+</body>
+</html>
