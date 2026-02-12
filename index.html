@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>A to Aa</title>
+  <title>Aa to B</title>
   <style>
     body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; }
     button { padding: 10px 12px; margin-right: 8px; }
@@ -11,7 +11,7 @@
   </style>
 </head>
 <body>
-  <h1>A to Aa</h1>
+  <h1>Aa to B</h1>
   <button id="start">Start</button>
   <button id="stop" disabled>Stop</button>
   <pre id="out">Press “Start”.</pre>
@@ -45,7 +45,7 @@
 
     function fmtDistance(m) {
       if (m < 1000) return `${Math.round(m)} m`;
-      return `${(m / 1000).toFixed(3)} km`;
+      return `${(m / 1000).toFixed(0)} km`;
     }
 
     function setTrackingUI(isTracking) {
@@ -88,7 +88,7 @@
       if (watchId != null) navigator.geolocation.clearWatch(watchId);
       watchId = null;
       setTrackingUI(false);
-      out.textContent = "Tracking stopped.";
+      out.textContent = "Stopped.";
     });
   </script>
 </body>
